@@ -5,7 +5,6 @@ import { ClientOverview } from "./components/ClientOverview";
 import { GrowthMissionPanel } from "./components/GrowthMissionPanel";
 import { StandaloneAgents } from "./components/StandaloneAgents";
 import { SearchConsolePanel } from "./components/SearchConsolePanel";
-import { GrowthAgentPanel } from "./components/GrowthAgentPanel";
 import { ComingLater } from "../../components/hud/ComingLater";
 import { HashScroll } from "../../components/hud/HashScroll";
 import { ArrowLeft } from "lucide-react";
@@ -32,7 +31,6 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
       {client.site ? (
         <>
-          <GrowthAgentPanel clientId={client.id} />
           <GrowthMissionPanel clientId={client.id} siteId={client.site.id} />
           <StandaloneAgents clientId={client.id} />
           <SearchConsolePanel clientId={client.id} siteId={client.site.id} siteUrl={client.site.url} />
@@ -43,7 +41,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
       <ComingLater
         section="Google Analytics / conversion tracking"
-        phase="next builds — the Growth Agent live-site API and Search Console are live above"
+        phase="Search Console is live above"
       />
     </div>
   );

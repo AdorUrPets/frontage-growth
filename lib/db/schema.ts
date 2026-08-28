@@ -48,8 +48,6 @@ CREATE TABLE IF NOT EXISTS sites (
   google_refresh_token_ciphertext TEXT,
   google_refresh_token_iv TEXT,
   google_refresh_token_tag TEXT,
-  growth_agent_token_hash TEXT,
-  growth_agent_token_created_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import type { ClientReportData } from "./report";
+import type { ClientReportData, ReportFinding } from "./report";
 
 const SEVERITY_COLOR: Record<string, string> = {
   CRITICAL: "#b91c1c",
@@ -8,10 +8,14 @@ const SEVERITY_COLOR: Record<string, string> = {
   LOW: "#57606a",
 };
 
+const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+
 const PAGE_WIDTH = 545;
 
-// Renders the same findings/proposals already visible in the app into a
-// portable PDF — pure presentation, no new analysis happens here.
+// Renders the open findings as a fix list, grouped by severity — a
+// standalone document meant to be handed off (to a developer, or to
+// Claude) as the work order for what needs fixing on this site, with
+// enough detail per finding that no further digging is needed.
 export function renderClientReportPdf(data: ClientReportData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true });
@@ -20,57 +24,47 @@ export function renderClientReportPdf(data: ClientReportData): Promise<Buffer> {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const { client, findings, schemaProposals, pendingChanges, contentOpportunities } = data;
+    const { client, findings } = data;
 
-    doc.fontSize(18).fillColor("#111").text("Frontage Growth — SEO Findings Report");
+    doc.fontSize(18).fillColor("#111").text("Frontage Growth — Fix List");
     doc.moveDown(0.3);
     doc.fontSize(11).fillColor("#444").text(`${client.name}${client.business_name ? ` (${client.business_name})` : ""}`);
     doc.fontSize(10).fillColor("#666").text(client.site?.url ?? "");
     doc.fontSize(9).fillColor("#888").text(`Generated ${new Date(data.generatedAt).toLocaleString()}`);
 
-    function sectionHeader(title: string, count: number) {
+    const counts = SEVERITY_ORDER.map((s) => ({ severity: s, n: findings.filter((f) => f.severity === s).length }));
+    doc.moveDown(0.6);
+    doc.fontSize(10).fillColor("#333").text(counts.map((c) => `${c.severity}: ${c.n}`).join("   ·   "));
+
+    if (findings.length === 0) {
       doc.moveDown(1);
-      doc.fontSize(13).fillColor("#111").text(`${title} (${count})`);
+      doc.fontSize(11).fillColor("#555").text("No open findings — nothing to fix right now.");
+      doc.end();
+      return;
+    }
+
+    function severityHeader(severity: string, count: number) {
+      doc.moveDown(1);
+      doc.fontSize(13).fillColor(SEVERITY_COLOR[severity] ?? "#111").text(`${severity} (${count})`);
       const y = doc.y + 2;
       doc.moveTo(50, y).lineTo(PAGE_WIDTH, y).strokeColor("#ddd").lineWidth(1).stroke();
       doc.moveDown(0.5);
     }
 
-    function emptyLine(text: string) {
-      doc.fontSize(10).fillColor("#888").text(text);
+    function renderFinding(f: ReportFinding, index: number) {
+      doc.fontSize(10).fillColor("#111").text(`${index}. [${f.category}] ${f.finding}`);
+      if (f.url) doc.fontSize(8.5).fillColor("#777").text(f.url);
+      for (const detail of f.details) {
+        doc.fontSize(9).fillColor("#3a3a3a").text(detail, { indent: 10 });
+      }
+      doc.moveDown(0.45);
     }
 
-    sectionHeader("Findings — what needs fixing", findings.length);
-    if (findings.length === 0) emptyLine("No open findings.");
-    for (const f of findings) {
-      doc.fontSize(10).fillColor(SEVERITY_COLOR[f.severity] ?? "#333").text(`[${f.severity}] [${f.category}] ${f.finding}`);
-      if (f.url) doc.fontSize(8).fillColor("#888").text(f.url);
-      doc.moveDown(0.35);
-    }
-
-    sectionHeader("Proposed structured data (schema)", schemaProposals.length);
-    if (schemaProposals.length === 0) emptyLine("No schema proposals pending.");
-    for (const s of schemaProposals) {
-      doc.fontSize(10).fillColor("#111").text(`${s.schemaType} schema proposed`);
-      doc.fontSize(8).fillColor("#888").text(s.url);
-      doc.moveDown(0.35);
-    }
-
-    sectionHeader("Pending on-page changes (awaiting approval)", pendingChanges.length);
-    if (pendingChanges.length === 0) emptyLine("None pending.");
-    for (const c of pendingChanges) {
-      doc.fontSize(10).fillColor("#111").text(`${c.field}: "${c.before ?? "(empty)"}" -> "${c.after ?? "(empty)"}"`);
-      doc.fontSize(8).fillColor("#888").text(c.url);
-      doc.moveDown(0.35);
-    }
-
-    sectionHeader("Content opportunities", contentOpportunities.length);
-    if (contentOpportunities.length === 0) emptyLine("None proposed.");
-    for (const o of contentOpportunities) {
-      doc.fontSize(10).fillColor("#111").text(o.title);
-      if (o.opportunity) doc.fontSize(9).fillColor("#555").text(o.opportunity);
-      if (o.url) doc.fontSize(8).fillColor("#888").text(o.url);
-      doc.moveDown(0.35);
+    for (const severity of SEVERITY_ORDER) {
+      const group = findings.filter((f) => f.severity === severity);
+      if (group.length === 0) continue;
+      severityHeader(severity, group.length);
+      group.forEach((f, i) => renderFinding(f, i + 1));
     }
 
     doc.end();

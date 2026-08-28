@@ -27,21 +27,22 @@ const COLUMN_MIGRATIONS = [
   "ALTER TABLE sites ADD COLUMN google_connection_id TEXT REFERENCES google_connections(id) ON DELETE SET NULL",
   "ALTER TABLE pages ADD COLUMN price REAL",
   "ALTER TABLE pages ADD COLUMN price_currency TEXT",
-  "ALTER TABLE sites ADD COLUMN growth_agent_token_hash TEXT",
-  "ALTER TABLE sites ADD COLUMN growth_agent_token_created_at TEXT",
 ];
 
-// Shopify support was removed entirely — these drop the columns/table it
-// used so no stored access tokens are left behind on disk. Safe to run
-// repeatedly: a missing column/table is caught and ignored, same as the
-// ADD COLUMN migrations above.
-const SHOPIFY_REMOVAL_MIGRATIONS = [
+// Retired features (Shopify integration, the Growth Agent live-site pull
+// token) — these drop the columns/table they used so no stored
+// tokens/secrets are left behind on disk. Safe to run repeatedly: a
+// missing column/table is caught and ignored, same as the ADD COLUMN
+// migrations above.
+const COLUMN_REMOVAL_MIGRATIONS = [
   "ALTER TABLE sites DROP COLUMN shopify_shop_domain",
   "ALTER TABLE sites DROP COLUMN shopify_access_token_ciphertext",
   "ALTER TABLE sites DROP COLUMN shopify_access_token_iv",
   "ALTER TABLE sites DROP COLUMN shopify_access_token_tag",
   "ALTER TABLE sites DROP COLUMN platform",
   "DROP TABLE IF EXISTS shopify_oauth_pending",
+  "ALTER TABLE sites DROP COLUMN growth_agent_token_hash",
+  "ALTER TABLE sites DROP COLUMN growth_agent_token_created_at",
 ];
 
 function runMigrations(db: Database.Database) {
@@ -52,7 +53,7 @@ function runMigrations(db: Database.Database) {
       // column already exists — fine
     }
   }
-  for (const sql of SHOPIFY_REMOVAL_MIGRATIONS) {
+  for (const sql of COLUMN_REMOVAL_MIGRATIONS) {
     try {
       db.exec(sql);
     } catch {

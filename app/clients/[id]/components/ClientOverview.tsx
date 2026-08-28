@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "../../../components/hud/Panel";
-import { Pencil, Trash2, Save, X } from "lucide-react";
+import { Pencil, Trash2, Save, X, Eraser } from "lucide-react";
 import type { ClientWithSite } from "@/lib/db/clients";
 
 export function ClientOverview({ client: initial }: { client: ClientWithSite }) {
@@ -12,6 +12,7 @@ export function ClientOverview({ client: initial }: { client: ClientWithSite }) 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState(client.name);
@@ -49,6 +50,26 @@ export function ClientOverview({ client: initial }: { client: ClientWithSite }) 
     router.refresh();
   }
 
+  async function clearReports() {
+    if (
+      !window.confirm(
+        `Clear all reports and findings for "${client.name}"? This deletes every crawl, finding, keyword, content draft, mission and business profile on file for this site — it can't be undone. The site connection itself (URL, Search Console) is kept, and you can rescan from scratch afterwards.`
+      )
+    ) {
+      return;
+    }
+    setClearing(true);
+    setError(null);
+    const res = await fetch(`/api/clients/${client.id}/reset`, { method: "POST" });
+    setClearing(false);
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Failed to clear reports and findings.");
+    }
+  }
+
   async function remove() {
     if (!window.confirm(`Delete "${client.name}"? This removes every crawl, finding, key, mission and change history stored for it. This can't be undone.`)) {
       return;
@@ -82,6 +103,11 @@ export function ClientOverview({ client: initial }: { client: ClientWithSite }) 
             <button className="fg-btn" onClick={startEdit}>
               <Pencil size={13} /> Edit
             </button>
+            {client.site ? (
+              <button className="fg-btn" onClick={clearReports} disabled={clearing}>
+                <Eraser size={13} /> {clearing ? "Clearing…" : "Clear Reports & Findings"}
+              </button>
+            ) : null}
             <button className="fg-btn fg-btn--danger" onClick={remove} disabled={deleting}>
               <Trash2 size={13} /> {deleting ? "Deleting…" : "Delete Client"}
             </button>

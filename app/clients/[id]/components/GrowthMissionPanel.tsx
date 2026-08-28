@@ -172,6 +172,7 @@ function ProtocolPipeline({ clientId, growth, onAdvance }: { clientId: string; g
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [starting, setStarting] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [rescanning, setRescanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -233,6 +234,33 @@ function ProtocolPipeline({ clientId, growth, onAdvance }: { clientId: string; g
     poll(data.missionId);
   }
 
+  // Always available (never gated behind "pipeline complete") — clears
+  // every prior report/finding for this site first so re-running doesn't
+  // pile duplicate keywords/opportunities/findings on top of old ones,
+  // then starts the SEO protocol fresh from Site Recon.
+  async function rescan() {
+    if (
+      !window.confirm(
+        "Rescan this site from scratch? This clears every existing report and finding first (crawl data, findings, keywords, content, missions, business profile), then starts a fresh SEO protocol run. This can't be undone."
+      )
+    ) {
+      return;
+    }
+    setRescanning(true);
+    setError(null);
+    const resetRes = await fetch(`/api/clients/${clientId}/reset`, { method: "POST" });
+    if (!resetRes.ok) {
+      setRescanning(false);
+      const data = await resetRes.json().catch(() => ({}));
+      setError(data.error ?? "Failed to clear existing data before rescanning.");
+      return;
+    }
+    setMission(null);
+    setRescanning(false);
+    onAdvance();
+    await startProtocol("seo");
+  }
+
   async function approve() {
     if (!activeMissionId) return;
     setApproving(true);
@@ -249,7 +277,15 @@ function ProtocolPipeline({ clientId, growth, onAdvance }: { clientId: string; g
   const isFailed = displayMission?.status === "failed" && !isRunning;
 
   return (
-    <Panel id="pipeline" title="Growth Mission Pipeline">
+    <Panel
+      id="pipeline"
+      title="Growth Mission Pipeline"
+      right={
+        <button className="fg-btn" onClick={rescan} disabled={isRunning || rescanning}>
+          {rescanning ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} {rescanning ? "Rescanning…" : "Rescan"}
+        </button>
+      }
+    >
       {error ? <p className="mb-3 text-xs text-[var(--fg-red)]">{error}</p> : null}
 
       {/* Protocol sequence bar */}

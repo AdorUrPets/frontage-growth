@@ -89,3 +89,45 @@ export function updateClient(
 export function deleteClient(id: string): void {
   getDb().prepare(`DELETE FROM clients WHERE id = ?`).run(id);
 }
+
+export interface ClearGrowthDataResult {
+  ok: boolean;
+  error?: string;
+}
+
+// Wipes every report/finding the agents have produced for this client's
+// site — crawl data, findings, keywords, content, missions/agent runs,
+// the business profile — so the pipeline is back to "never scanned" and
+// a fresh protocol run starts clean instead of piling duplicates onto old
+// data. Deliberately keeps the site row itself (URL, Search Console
+// connection) and real synced Search Console/Analytics history, since
+// those aren't agent-generated findings and re-syncing costs a real API
+// call — only the AI/crawl-derived report data is cleared.
+export function clearGrowthData(clientId: string): ClearGrowthDataResult {
+  const db = getDb();
+  const site = db.prepare(`SELECT id FROM sites WHERE client_id = ? ORDER BY created_at ASC LIMIT 1`).get(clientId) as { id: string } | undefined;
+  if (!site) return { ok: false, error: "This client has no site on file." };
+
+  const tx = db.transaction(() => {
+    db.prepare(`DELETE FROM pages WHERE site_id = ?`).run(site.id); // cascades seo_findings, seo_changes, schema_findings
+    db.prepare(`DELETE FROM crawls WHERE site_id = ?`).run(site.id); // cascades crawl_pages
+    db.prepare(`DELETE FROM technical_findings WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM keywords WHERE site_id = ?`).run(site.id); // cascades serp_results
+    db.prepare(`DELETE FROM keyword_clusters WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM competitors WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM content_opportunities WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM content_assets WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM audiences WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM channels WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM traffic_campaigns WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM conversions WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM missions WHERE site_id = ?`).run(site.id); // cascades mission_steps
+    db.prepare(`DELETE FROM agent_runs WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM approvals WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM deployments WHERE site_id = ?`).run(site.id);
+    db.prepare(`DELETE FROM business_profiles WHERE client_id = ?`).run(clientId);
+  });
+  tx();
+
+  return { ok: true };
+}
