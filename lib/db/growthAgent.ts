@@ -3,8 +3,8 @@ import { getDb } from "./client";
 import type { SiteRow } from "../types";
 
 // Per-site bearer token for the Growth Agent pull API — a live client site
-// (not necessarily Shopify) presents this to fetch its own currently-approved
-// SEO overrides. Stored as a hash only (like a GitHub personal access token):
+// presents this to fetch its own currently-approved SEO overrides. Stored
+// as a hash only (like a GitHub personal access token):
 // the raw token is shown exactly once at generation and is never retrievable
 // again, and verification is a hash lookup rather than a decrypt.
 function hashToken(token: string): string {

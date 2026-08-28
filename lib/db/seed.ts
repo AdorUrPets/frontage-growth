@@ -46,7 +46,6 @@ const AGENTS: { code: string; name: string; description: string; task_type: stri
   { code: "content_opportunity", name: "Content Opportunity Agent", description: "Identifies genuinely useful missing pages backed by real search demand.", task_type: "content_writing" },
   { code: "seo_writer", name: "SEO Writer", description: "Drafts approved content opportunities end to end.", task_type: "content_writing" },
   { code: "seo_qa", name: "SEO QA Agent", description: "Fact/SEO/duplication/grammar/location/intent/brand QA before approval.", task_type: "final_qa" },
-  { code: "seo_publisher", name: "SEO Publisher", description: "Applies approved changes through the site adapter, with rollback capability.", task_type: "final_qa" },
   { code: "audience_discovery", name: "Audience Discovery Agent", description: "Determines who the client's real customers are and where they are.", task_type: "audience_identification" },
   { code: "traffic_strategist", name: "Traffic Strategist", description: "Evaluates relevant organic channels and builds traffic campaigns.", task_type: "traffic_strategy" },
   { code: "content_distribution", name: "Content Distribution Agent", description: "Adapts a piece of content into channel-specific formats.", task_type: "content_writing" },

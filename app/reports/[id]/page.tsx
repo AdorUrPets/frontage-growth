@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getClientReport } from "@/lib/db/artifacts";
 import { Panel } from "../../components/hud/Panel";
 import { StatusPill } from "../../components/hud/StatusPill";
-import { ArrowLeft, Rocket, Wrench, FileText, Braces, Hash, Users, Route, UploadCloud, Search } from "lucide-react";
+import { ArrowLeft, Rocket, Wrench, FileText, Braces, Hash, Users, Route, UploadCloud, Search, FileDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +38,14 @@ export default async function ClientReportPage({ params }: { params: Promise<{ i
               {client.siteUrl ?? "no site"} {client.primaryLocation ? `· ${client.primaryLocation}` : ""}
             </p>
           </div>
-          <Link href={`/clients/${client.id}`} className="fg-btn">
-            Open Client Page <ArrowLeft size={12} className="rotate-180" />
-          </Link>
+          <div className="flex gap-2">
+            <a className="fg-btn" href={`/api/clients/${client.id}/report`} download>
+              <FileDown size={13} /> Download PDF Report
+            </a>
+            <Link href={`/clients/${client.id}`} className="fg-btn">
+              Open Client Page <ArrowLeft size={12} className="rotate-180" />
+            </Link>
+          </div>
         </div>
       </div>
 

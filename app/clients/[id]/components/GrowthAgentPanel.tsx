@@ -85,7 +85,7 @@ export function GrowthAgentPanel({ clientId }: { clientId: string }) {
     >
       {error ? <p className="mb-3 text-xs text-[var(--fg-red)]">{error}</p> : null}
       <p className="mb-3 text-[10.5px] text-[var(--fg-text-dim)]">
-        For sites you build yourself (not Shopify) — the site calls Mission Control directly to fetch its own currently-approved title/meta
+        For sites you build and host yourself — the site calls Mission Control directly to fetch its own currently-approved title/meta
         description/H1, using the token below. Nothing here pushes anything; the token only authenticates reads.
       </p>
 

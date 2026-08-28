@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runStandaloneAgent } from "@/lib/missions/runner";
 import { getDb } from "@/lib/db/client";
 
-const STANDALONE_AGENTS = new Set(["growth_commander", "conversion_agent", "performance_analyst", "seo_publisher", "email_dns_health"]);
+const STANDALONE_AGENTS = new Set(["growth_commander", "conversion_agent", "performance_analyst", "email_dns_health"]);
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string; code: string }> }) {
   const { id, code } = await params;

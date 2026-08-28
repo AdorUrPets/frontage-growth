@@ -16,7 +16,6 @@ import {
   Share2,
   Target,
   LineChart,
-  UploadCloud,
   type LucideIcon,
 } from "lucide-react";
 
@@ -60,10 +59,9 @@ export const AGENT_META: Record<string, AgentMeta> = {
   content_opportunity: { icon: Lightbulb, side: "right", order: 1, verb: "Discovering", accent: "var(--fg-cyan)", anchor: "content-opportunities" },
   seo_writer: { icon: PenTool, side: "right", order: 2, verb: "Writing", accent: "var(--fg-teal)", anchor: "content-drafts" },
   seo_qa: { icon: CheckSquare, side: "right", order: 3, verb: "Reviewing", accent: "var(--fg-cyan)", anchor: "content-drafts" },
-  seo_publisher: { icon: UploadCloud, side: "right", order: 4, verb: "Publishing", accent: "var(--fg-green)", anchor: "seo-proposals" },
-  audience_discovery: { icon: Users, side: "right", order: 5, verb: "Analyzing", accent: "var(--fg-teal)", anchor: "audiences" },
-  traffic_strategist: { icon: Route, side: "right", order: 6, verb: "Planning", accent: "var(--fg-cyan)", anchor: "channels" },
-  content_distribution: { icon: Share2, side: "right", order: 7, verb: "Distributing", accent: "var(--fg-green)", anchor: "content-drafts" },
-  conversion_agent: { icon: Target, side: "right", order: 8, verb: "Optimizing", accent: "var(--fg-teal)", anchor: "agent-conversion_agent" },
-  performance_analyst: { icon: LineChart, side: "right", order: 9, verb: "Analyzing", accent: "var(--fg-cyan)", anchor: "agent-performance_analyst" },
+  audience_discovery: { icon: Users, side: "right", order: 4, verb: "Analyzing", accent: "var(--fg-teal)", anchor: "audiences" },
+  traffic_strategist: { icon: Route, side: "right", order: 5, verb: "Planning", accent: "var(--fg-cyan)", anchor: "channels" },
+  content_distribution: { icon: Share2, side: "right", order: 6, verb: "Distributing", accent: "var(--fg-green)", anchor: "content-drafts" },
+  conversion_agent: { icon: Target, side: "right", order: 7, verb: "Optimizing", accent: "var(--fg-teal)", anchor: "agent-conversion_agent" },
+  performance_analyst: { icon: LineChart, side: "right", order: 8, verb: "Analyzing", accent: "var(--fg-cyan)", anchor: "agent-performance_analyst" },
 };

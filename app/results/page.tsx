@@ -17,7 +17,7 @@ export default function ResultsPage() {
       <div>
         <h1 className="text-lg font-bold text-[var(--fg-text)]">Results</h1>
         <p className="mt-1 text-xs text-[var(--fg-text-dim)]">
-          What actually shipped: real Shopify deployments, completed missions, and real Search Console performance
+          What actually shipped: deployments to live sites, completed missions, and real Search Console performance
           where it&apos;s connected.
         </p>
       </div>
@@ -51,7 +51,7 @@ export default function ResultsPage() {
 
       <Panel title="Deployments to Live Sites" icon={<UploadCloud size={13} />}>
         {deployments.length === 0 ? (
-          <p className="text-xs text-[var(--fg-text-dim)]">Nothing pushed live yet — approve on-page proposals on a client page, then push to Shopify.</p>
+          <p className="text-xs text-[var(--fg-text-dim)]">Nothing pushed live yet.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {deployments.map((d) => (

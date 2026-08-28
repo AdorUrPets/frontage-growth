@@ -94,12 +94,6 @@ export const AGENT_PROFILES: Record<string, AgentProfile> = {
     produces: "QA verdict on each draft (flags the asset's status)",
     gated: true,
   },
-  seo_publisher: {
-    role: "Pushes approved title/meta changes live through the Shopify Admin API, recording each deployment so it can be rolled back.",
-    why: "The only agent that writes to a client's live site. It runs solely on changes you have explicitly approved, and every push is reversible.",
-    produces: "deployments (writes live to the connected store)",
-    gated: false,
-  },
   audience_discovery: {
     role: "Determines who the client's real customers are and which segments are worth pursuing.",
     why: "Channel and content decisions are guesses until you know who you're targeting. This defines the segments the traffic work is aimed at.",

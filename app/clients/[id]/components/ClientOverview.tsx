@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "../../../components/hud/Panel";
-import { Pencil, Trash2, Save, X, FileDown } from "lucide-react";
+import { Pencil, Trash2, Save, X } from "lucide-react";
 import type { ClientWithSite } from "@/lib/db/clients";
 
 export function ClientOverview({ client: initial }: { client: ClientWithSite }) {
@@ -79,11 +79,6 @@ export function ClientOverview({ client: initial }: { client: ClientWithSite }) 
           </div>
         ) : (
           <div className="flex gap-2">
-            {client.site ? (
-              <a className="fg-btn" href={`/api/clients/${client.id}/report`} download>
-                <FileDown size={13} /> Download PDF Report
-              </a>
-            ) : null}
             <button className="fg-btn" onClick={startEdit}>
               <Pencil size={13} /> Edit
             </button>

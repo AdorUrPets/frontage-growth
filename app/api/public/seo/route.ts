@@ -9,11 +9,10 @@ interface ChangeRow {
 }
 
 // Public, token-authenticated read API for the Growth Agent embedded in a
-// live client site (Shopify or not) — the site calls this itself to fetch
-// its own currently-approved SEO values. Pure read: no writes, no
-// applied_at/deployments bookkeeping (unlike the Shopify publisher, which
-// applies once; here the site is the source of truth for what it renders,
-// and just asks "what's currently approved" on every call).
+// live client site — the site calls this itself to fetch its own
+// currently-approved SEO values. Pure read: no writes, no applied_at/
+// deployments bookkeeping — the site is the source of truth for what it
+// renders, and just asks "what's currently approved" on every call.
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length).trim() : "";

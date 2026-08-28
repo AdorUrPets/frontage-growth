@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS sites (
   client_id TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   cms TEXT,
-  platform TEXT,
   repo_url TEXT,
   hosting TEXT,
   search_console_connected INTEGER NOT NULL DEFAULT 0,
@@ -49,31 +48,12 @@ CREATE TABLE IF NOT EXISTS sites (
   google_refresh_token_ciphertext TEXT,
   google_refresh_token_iv TEXT,
   google_refresh_token_tag TEXT,
-  shopify_shop_domain TEXT,
-  shopify_access_token_ciphertext TEXT,
-  shopify_access_token_iv TEXT,
-  shopify_access_token_tag TEXT,
   growth_agent_token_hash TEXT,
   growth_agent_token_created_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_sites_client ON sites(client_id);
-
--- Short-lived: holds a site's Shopify custom-app Client ID/Secret only for
--- the few seconds between starting the OAuth redirect and the callback
--- completing the token exchange. Deleted immediately after use (or expired
--- rows cleaned up) — never a long-term store, unlike sites.shopify_*.
-CREATE TABLE IF NOT EXISTS shopify_oauth_pending (
-  id TEXT PRIMARY KEY,
-  site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
-  shop_domain TEXT NOT NULL,
-  client_id TEXT NOT NULL,
-  client_secret_ciphertext TEXT NOT NULL,
-  client_secret_iv TEXT NOT NULL,
-  client_secret_tag TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
 
 CREATE TABLE IF NOT EXISTS pages (
   id TEXT PRIMARY KEY,

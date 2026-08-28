@@ -265,9 +265,8 @@ export default async function DashboardPage() {
   ];
 
   // "View All Approvals" must land on the panel that actually holds the
-  // proposals (client → On-Page SEO Proposals, where the Push-to-Shopify
-  // button lives) — prefer whoever has something pending, else whoever has
-  // the most proposals on file.
+  // proposals (client → On-Page SEO Proposals) — prefer whoever has
+  // something pending, else whoever has the most proposals on file.
   const proposalsClientId =
     approvalItems[0]?.clientId ??
     (

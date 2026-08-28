@@ -499,13 +499,10 @@ function KeywordsPanel({ clusters, keywords }: { clusters: KeywordCluster[]; key
   );
 }
 
-function SeoChangesPanel({ siteId, clientId }: { siteId: string; clientId: string }) {
+function SeoChangesPanel({ siteId }: { siteId: string }) {
   const [changes, setChanges] = useState<SeoChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [deciding, setDeciding] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState(false);
-  const [publishResult, setPublishResult] = useState<string | null>(null);
-  const [publishError, setPublishError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/seo-changes?siteId=${siteId}`);
@@ -527,52 +524,10 @@ function SeoChangesPanel({ siteId, clientId }: { siteId: string; clientId: strin
     load();
   }
 
-  async function rollback(id: string) {
-    setDeciding(id);
-    const res = await fetch(`/api/seo-changes/${id}/rollback`, { method: "POST" });
-    const data = await res.json();
-    setDeciding(null);
-    if (!res.ok) setPublishError(data.error ?? "Rollback failed.");
-    load();
-  }
-
-  async function publish() {
-    setPublishing(true);
-    setPublishError(null);
-    setPublishResult(null);
-    const res = await fetch(`/api/clients/${clientId}/agents/seo_publisher`, { method: "POST" });
-    const data = await res.json();
-    setPublishing(false);
-    if (!res.ok) {
-      setPublishError(data.error ?? "Publish failed.");
-      return;
-    }
-    const out = data.output as { pushed: number; failed: number; skipped: number };
-    setPublishResult(`Pushed ${out.pushed} to Shopify, ${out.failed} failed, ${out.skipped} skipped (unsupported page type).`);
-    load();
-  }
-
   if (loading || changes.length === 0) return null;
 
-  const approvedUnpublished = changes.filter((c) => c.approval_status === "approved" && !c.applied_at && (c.field === "title" || c.field === "meta_description"));
-
   return (
-    <Panel
-      id="seo-proposals"
-      title="On-Page SEO Proposals"
-      right={
-        approvedUnpublished.length > 0 ? (
-          <button className="fg-btn fg-btn--primary" onClick={publish} disabled={publishing}>
-            {publishing ? <Loader2 size={13} className="animate-spin" /> : <Rocket size={13} />}
-            {publishing ? "Publishing…" : `Push ${approvedUnpublished.length} Approved to Shopify`}
-          </button>
-        ) : (
-          <span className="fg-metric-tag">AI ANALYSIS</span>
-        )
-      }
-    >
-      {publishError ? <p className="mb-3 text-xs text-[var(--fg-red)]">{publishError}</p> : null}
-      {publishResult ? <p className="mb-3 text-xs text-[var(--fg-accent)]">{publishResult}</p> : null}
+    <Panel id="seo-proposals" title="On-Page SEO Proposals" right={<span className="fg-metric-tag">AI ANALYSIS</span>}>
       <div className="flex flex-col gap-3">
         {changes.map((c) => (
           <div key={c.id} className="rounded-lg border border-[var(--fg-border)] bg-[var(--fg-panel-raised)] p-3">
@@ -580,12 +535,7 @@ function SeoChangesPanel({ siteId, clientId }: { siteId: string; clientId: strin
               <span className="truncate text-[11px] text-[var(--fg-text-faint)]">{c.page_url} · {c.field}</span>
               <div className="flex items-center gap-2">
                 {c.applied_at ? (
-                  <>
-                    <StatusPill status="online" label="live on site" />
-                    <button className="fg-btn" onClick={() => rollback(c.id)} disabled={deciding === c.id}>
-                      <RefreshCw size={12} /> Rollback
-                    </button>
-                  </>
+                  <StatusPill status="online" label="live on site" />
                 ) : c.approval_status ? (
                   <StatusPill status={c.approval_status === "approved" ? "warn" : "error"} label={c.approval_status === "approved" ? "approved, not live" : "rejected"} />
                 ) : (
@@ -743,7 +693,7 @@ export function GrowthMissionPanel({ clientId, siteId }: { clientId: string; sit
       {growth ? <TechnicalFindingsPanel findings={growth.technicalFindings} /> : null}
       {growth ? <KeywordsPanel clusters={growth.keywordClusters} keywords={growth.keywords} /> : null}
       {growth ? <CompetitorsPanel competitors={growth.competitors} /> : null}
-      <SeoChangesPanel siteId={siteId} clientId={clientId} />
+      <SeoChangesPanel siteId={siteId} />
       {growth ? <SchemaPanel findings={growth.schemaFindings} /> : null}
       {growth ? <TrafficPanel audiences={growth.audiences} channels={growth.channels} /> : null}
       {growth ? <ContentOpportunitiesPanel opportunities={growth.contentOpportunities} /> : null}

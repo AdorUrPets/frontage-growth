@@ -18,7 +18,6 @@ import { runContentDistribution } from "../agents/contentDistribution";
 import { runGrowthCommander } from "../agents/growthCommander";
 import { runConversionAgent } from "../agents/conversionAgent";
 import { runPerformanceAnalyst } from "../agents/performanceAnalyst";
-import { runSeoPublisher } from "../agents/seoPublisher";
 import { runEmailDnsHealth } from "../agents/emailDns";
 import type { ClientRow, SiteRow } from "../types";
 
@@ -119,10 +118,6 @@ export const AGENT_RUNNERS: Record<string, (client: ClientRow, site: SiteRow) =>
   performance_analyst: async (_client, site) => {
     const r = await runPerformanceAnalyst(site);
     return { ok: r.ok, output: r, error: r.ok ? undefined : "Performance analyst failed unexpectedly." };
-  },
-  seo_publisher: async (_client, site) => {
-    const r = await runSeoPublisher(site);
-    return { ok: r.ok, output: r, error: r.error };
   },
   email_dns_health: async (_client, site) => {
     const r = await runEmailDnsHealth(site);

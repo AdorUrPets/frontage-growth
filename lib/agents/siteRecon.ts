@@ -44,13 +44,9 @@ async function fetchHtml(url: string): Promise<FetchResult> {
   }
 }
 
-// Real platform fingerprinting from the homepage response we already fetched —
-// no extra requests. This is the only place in the app that inspects the
-// TARGET SITE itself to determine what it's built on; everywhere else
-// ("Shopify connected") only checks whether OUR OWN OAuth credentials are
-// saved, which says nothing about the site's actual platform. Without this,
-// the Push-to-Shopify panel would show identical "connect your Shopify
-// store" instructions on a site that was never Shopify to begin with.
+// Real platform fingerprinting from the homepage response we already fetched
+// — no extra requests. Stored as `sites.cms` so later work (technical
+// findings, manual fixes) knows what stack a client's site actually runs on.
 function detectPlatform(html: string, headers: Headers | undefined): string | null {
   if (headers?.has("x-shopid") || headers?.has("x-shopify-stage") || headers?.has("x-sorting-hat-shopid")) return "shopify";
   if (/cdn\.shopify(cdn)?\.(com|net)/i.test(html) || /Shopify\.(shop|theme)\b/.test(html) || /shopify-features/i.test(html)) return "shopify";
