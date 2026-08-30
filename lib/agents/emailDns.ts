@@ -1,4 +1,4 @@
-import { promises as dns } from "node:dns";
+import { promises as dnsPromises } from "node:dns";
 import { getDb, newId } from "../db/client";
 import type { SiteRow } from "../types";
 
@@ -7,6 +7,25 @@ export interface EmailDnsResult {
   findingsCreated: number;
   domain?: string;
   error?: string;
+}
+
+// Node's default resolver is unreliable on some Windows setups — it's
+// supposed to fall back through every DNS server the OS reports, but on a
+// dual-stack machine with an IPv6 link-local resolver listed first, it can
+// end up defaulting to 127.0.0.1 with nothing listening there
+// (dns.getServers() confirms this happens even though `ipconfig` and the
+// OS's own resolver both work fine — Windows' own DNS Client service
+// clearly reaches the real router, Node's just doesn't discover it the
+// same way). A scoped Resolver pointed at well-known public resolvers
+// sidesteps that entirely, without touching the process-wide default
+// (other code in this long-running server keeps whatever DNS behavior it
+// already had). Using public resolvers is also arguably more accurate for
+// this use case anyway — it reflects what the wider internet resolves,
+// not a possibly-stale or filtered local cache.
+function createResolver(): dnsPromises.Resolver {
+  const resolver = new dnsPromises.Resolver();
+  resolver.setServers(["1.1.1.1", "8.8.8.8"]);
+  return resolver;
 }
 
 // DKIM selectors are provider-specific and not discoverable without the
@@ -41,8 +60,8 @@ async function safeLookup<T>(fn: () => Promise<T>): Promise<LookupOutcome<T>> {
   }
 }
 
-async function resolveTxtJoined(hostname: string): Promise<LookupOutcome<string[]>> {
-  const result = await safeLookup(() => dns.resolveTxt(hostname));
+async function resolveTxtJoined(resolver: dnsPromises.Resolver, hostname: string): Promise<LookupOutcome<string[]>> {
+  const result = await safeLookup(() => resolver.resolveTxt(hostname));
   if (!result.value) return { value: null, inconclusive: result.inconclusive };
   return { value: result.value.map((parts) => parts.join("")), inconclusive: false };
 }
@@ -59,10 +78,12 @@ export async function runEmailDnsHealth(site: SiteRow): Promise<EmailDnsResult> 
     return { ok: false, findingsCreated: 0, error: "This site has no valid URL on file." };
   }
 
+  const resolver = createResolver();
+
   // Canary: confirm DNS lookups can actually complete on this network
   // before drawing any conclusions. A connectivity-class failure here
   // aborts the whole check rather than risk writing false findings.
-  const canary = await safeLookup(() => dns.resolveMx(domain));
+  const canary = await safeLookup(() => resolver.resolveMx(domain));
   if (canary.inconclusive) {
     return {
       ok: false,
@@ -86,9 +107,9 @@ export async function runEmailDnsHealth(site: SiteRow): Promise<EmailDnsResult> 
   };
 
   // DNS resolves at all (A or AAAA)
-  const a = await safeLookup(() => dns.resolve4(domain));
+  const a = await safeLookup(() => resolver.resolve4(domain));
   if (!a.inconclusive && (!a.value || a.value.length === 0)) {
-    const aaaa = await safeLookup(() => dns.resolve6(domain));
+    const aaaa = await safeLookup(() => resolver.resolve6(domain));
     if (aaaa.inconclusive) skipped++;
     else if (!aaaa.value || aaaa.value.length === 0) {
       add("dns", "CRITICAL", `${domain} does not resolve to an A or AAAA record — the domain may be misconfigured or not pointed at hosting`, { domain });
@@ -105,7 +126,7 @@ export async function runEmailDnsHealth(site: SiteRow): Promise<EmailDnsResult> 
   }
 
   // SPF
-  const rootTxt = await resolveTxtJoined(domain);
+  const rootTxt = await resolveTxtJoined(resolver, domain);
   if (rootTxt.inconclusive) {
     skipped++;
   } else {
@@ -133,7 +154,7 @@ export async function runEmailDnsHealth(site: SiteRow): Promise<EmailDnsResult> 
   }
 
   // DMARC
-  const dmarcTxt = await resolveTxtJoined(`_dmarc.${domain}`);
+  const dmarcTxt = await resolveTxtJoined(resolver, `_dmarc.${domain}`);
   if (dmarcTxt.inconclusive) {
     skipped++;
   } else {
@@ -171,7 +192,7 @@ export async function runEmailDnsHealth(site: SiteRow): Promise<EmailDnsResult> 
   const foundSelectors: string[] = [];
   let dkimInconclusive = false;
   for (const selector of COMMON_DKIM_SELECTORS) {
-    const recs = await resolveTxtJoined(`${selector}._domainkey.${domain}`);
+    const recs = await resolveTxtJoined(resolver, `${selector}._domainkey.${domain}`);
     if (recs.inconclusive) dkimInconclusive = true;
     else if ((recs.value ?? []).some((r) => /v=dkim1/i.test(r) || /p=/i.test(r))) foundSelectors.push(selector);
   }
