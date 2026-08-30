@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import PDFDocument from "pdfkit";
 import type { ClientReportData, ReportFinding } from "./report";
 
@@ -12,6 +13,24 @@ const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
 
 const PAGE_WIDTH = 545;
 
+// pdfkit's built-in Helvetica only covers WinAnsi (Latin-1-ish) — any
+// character outside that (macrons in NZ place names like "Ōmokoroa", smart
+// quotes, em dashes) silently renders as garbage glyphs instead of erroring,
+// which is worse than a crash because it's easy to miss. Point pdfkit at a
+// real system font with full Unicode coverage instead. Referenced from the
+// OS install, never copied into the repo — this only ever runs on a Windows
+// machine that already has these fonts licensed, so nothing is redistributed.
+// Falls back to pdfkit's default if neither is found (e.g. a future non-
+// Windows environment) rather than failing the whole report.
+const UNICODE_FONT_CANDIDATES = ["C:\\Windows\\Fonts\\segoeui.ttf", "C:\\Windows\\Fonts\\arial.ttf"];
+
+function resolveUnicodeFont(): string | null {
+  for (const candidate of UNICODE_FONT_CANDIDATES) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
 // Renders the open findings as a fix list, grouped by severity — a
 // standalone document meant to be handed off (to a developer, or to
 // Claude) as the work order for what needs fixing on this site, with
@@ -23,6 +42,9 @@ export function renderClientReportPdf(data: ClientReportData): Promise<Buffer> {
     doc.on("data", (chunk) => chunks.push(chunk as Buffer));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
+
+    const unicodeFont = resolveUnicodeFont();
+    if (unicodeFont) doc.font(unicodeFont);
 
     const { client, findings } = data;
 
