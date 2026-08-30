@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, CheckCheck } from "lucide-react";
 import { Panel } from "../hud/Panel";
 import { DEMO_APPROVALS, DEMO_TOOLTIP } from "./demoData";
 
@@ -31,6 +31,7 @@ async function approveOne(item: ApprovalItem) {
 export function ApprovalsQueue({ items, viewAllHref }: { items: ApprovalItem[]; viewAllHref: string }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [approvingAll, setApprovingAll] = useState(false);
 
   async function act(item: ApprovalItem, status: "approved" | "rejected") {
     setBusyId(item.id);
@@ -47,6 +48,17 @@ export function ApprovalsQueue({ items, viewAllHref }: { items: ApprovalItem[]; 
     router.refresh();
   }
 
+  async function approveAll() {
+    if (items.length === 0) return;
+    if (!window.confirm(`Approve all ${items.length} pending item(s) across every client? This can't be undone in bulk — you'd have to reject/roll back individually.`)) {
+      return;
+    }
+    setApprovingAll(true);
+    await Promise.all(items.map((item) => approveOne(item)));
+    setApprovingAll(false);
+    router.refresh();
+  }
+
   const badge =
     items.length > 0 ? (
       <span className="inline-flex h-4 min-w-[17px] items-center justify-center rounded-full bg-[var(--fg-red)] px-1 text-[9px] font-extrabold text-[#180407] shadow-[0_0_8px_var(--fg-glow-red)]">
@@ -55,7 +67,17 @@ export function ApprovalsQueue({ items, viewAllHref }: { items: ApprovalItem[]; 
     ) : null;
 
   return (
-    <Panel title="Approvals Queue" icon={badge}>
+    <Panel
+      title="Approvals Queue"
+      icon={badge}
+      right={
+        items.length > 0 ? (
+          <button className="fg-btn fg-btn--primary" onClick={approveAll} disabled={approvingAll || busyId !== null}>
+            {approvingAll ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />} {approvingAll ? "Approving…" : `Approve All (${items.length})`}
+          </button>
+        ) : null
+      }
+    >
       <div id="approvals" className="scroll-mt-24" />
 
       {items.length === 0 ? (
