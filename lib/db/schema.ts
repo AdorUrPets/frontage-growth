@@ -65,6 +65,10 @@ CREATE TABLE IF NOT EXISTS pages (
   indexable INTEGER,
   price REAL,
   price_currency TEXT,
+  images_total INTEGER,
+  images_missing_alt INTEGER,
+  viewport_content TEXT,
+  has_lorem_ipsum INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

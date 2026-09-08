@@ -27,6 +27,10 @@ const COLUMN_MIGRATIONS = [
   "ALTER TABLE sites ADD COLUMN google_connection_id TEXT REFERENCES google_connections(id) ON DELETE SET NULL",
   "ALTER TABLE pages ADD COLUMN price REAL",
   "ALTER TABLE pages ADD COLUMN price_currency TEXT",
+  "ALTER TABLE pages ADD COLUMN images_total INTEGER",
+  "ALTER TABLE pages ADD COLUMN images_missing_alt INTEGER",
+  "ALTER TABLE pages ADD COLUMN viewport_content TEXT",
+  "ALTER TABLE pages ADD COLUMN has_lorem_ipsum INTEGER",
 ];
 
 // Retired features (Shopify integration, the Growth Agent live-site pull

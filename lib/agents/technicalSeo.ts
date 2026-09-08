@@ -19,6 +19,15 @@ async function urlExists(url: string): Promise<boolean> {
   }
 }
 
+// `user-scalable=no` disables pinch-zoom outright; `maximum-scale=1` (or
+// less) has the same practical effect even without user-scalable present.
+// Either hurts mobile usability and Google's mobile-friendliness signal.
+function viewportDisablesZoom(viewport: string): boolean {
+  if (/user-scalable\s*=\s*no/i.test(viewport)) return true;
+  const maxScale = viewport.match(/maximum-scale\s*=\s*([\d.]+)/i);
+  return maxScale !== null && parseFloat(maxScale[1]) <= 1;
+}
+
 // Purely rule-based over data Site Recon already fetched — no AI call, no
 // external cost, matches the "SEO is free" principle: this finds real,
 // concrete issues (missing/duplicate titles and meta, missing canonical,
@@ -65,6 +74,32 @@ export async function runTechnicalSeo(site: SiteRow): Promise<TechnicalSeoResult
 
     if (!page.h1) add(page.id, "content", "MEDIUM", `Missing H1 heading`, { url: page.url });
     if (!page.canonical_url) add(page.id, "indexability", "LOW", `Missing canonical tag`, { url: page.url });
+
+    if (page.has_lorem_ipsum) {
+      add(page.id, "content", "HIGH", `Placeholder "Lorem ipsum" text is still live on this page`, { url: page.url });
+    }
+
+    if (page.images_total && page.images_missing_alt) {
+      add(
+        page.id,
+        "accessibility",
+        "LOW",
+        `${page.images_missing_alt} of ${page.images_total} image(s) missing alt text`,
+        { url: page.url }
+      );
+    }
+
+    if (!page.viewport_content) {
+      add(page.id, "mobile", "MEDIUM", `No viewport meta tag — page won't be treated as mobile-friendly by Google`, { url: page.url });
+    } else if (viewportDisablesZoom(page.viewport_content)) {
+      add(
+        page.id,
+        "mobile",
+        "MEDIUM",
+        `Viewport meta disables pinch-zoom — hurts mobile usability and accessibility`,
+        { url: page.url, viewport: page.viewport_content }
+      );
+    }
   }
 
   for (const [title, urls] of titleSeen) {

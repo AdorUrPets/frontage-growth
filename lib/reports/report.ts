@@ -65,6 +65,9 @@ function extractDetails(evidenceJson: string | null): string[] {
   if (Array.isArray(evidence.checkedSelectors) && evidence.checkedSelectors.length > 0) {
     lines.push(`Checked DKIM selectors: ${(evidence.checkedSelectors as string[]).join(", ")}`);
   }
+  if (typeof evidence.viewport === "string") {
+    lines.push(`Current viewport tag: ${evidence.viewport}`);
+  }
 
   return lines;
 }

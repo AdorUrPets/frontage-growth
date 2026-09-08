@@ -136,6 +136,28 @@ function extractPrice($: cheerio.CheerioAPI): { price: number | null; currency: 
   return { price, currency };
 }
 
+// Three cheap, deterministic content-quality signals pulled from the same
+// page fetch every other field already comes from — no extra requests.
+// Only `<img>` tags with no `alt` attribute at all count as missing:
+// `alt=""` is the correct, intentional way to mark a decorative image and
+// is not a defect.
+function extractContentQuality($: cheerio.CheerioAPI): { imagesTotal: number; imagesMissingAlt: number; viewportContent: string | null; hasLoremIpsum: boolean } {
+  const images = $("img");
+  let imagesMissingAlt = 0;
+  images.each((_, el) => {
+    if ($(el).attr("alt") === undefined) imagesMissingAlt++;
+  });
+
+  const bodyText = $("body").text();
+
+  return {
+    imagesTotal: images.length,
+    imagesMissingAlt,
+    viewportContent: $('meta[name="viewport"]').attr("content")?.trim() || null,
+    hasLoremIpsum: /lorem\s+ipsum/i.test(bodyText),
+  };
+}
+
 async function discoverUrls(baseUrl: string, homepageHtml: string): Promise<string[]> {
   const origin = new URL(baseUrl).origin;
   const urls = new Set<string>([baseUrl]);
@@ -197,6 +219,10 @@ export interface CrawledPage {
   pageType: string;
   price: number | null;
   priceCurrency: string | null;
+  imagesTotal: number | null;
+  imagesMissingAlt: number | null;
+  viewportContent: string | null;
+  hasLoremIpsum: boolean;
   error?: string;
 }
 
@@ -243,11 +269,16 @@ export async function runSiteRecon(site: SiteRow): Promise<SiteReconResult> {
             pageType: guessPageType(url),
             price: null,
             priceCurrency: null,
+            imagesTotal: null,
+            imagesMissingAlt: null,
+            viewportContent: null,
+            hasLoremIpsum: false,
             error: res.error,
           };
         }
         const $ = cheerio.load(res.html);
         const { price, currency } = extractPrice($);
+        const quality = extractContentQuality($);
         return {
           url,
           statusCode: res.status ?? 200,
@@ -258,6 +289,10 @@ export async function runSiteRecon(site: SiteRow): Promise<SiteReconResult> {
           pageType: guessPageType(url),
           price,
           priceCurrency: currency,
+          imagesTotal: quality.imagesTotal,
+          imagesMissingAlt: quality.imagesMissingAlt,
+          viewportContent: quality.viewportContent,
+          hasLoremIpsum: quality.hasLoremIpsum,
         };
       })
     );
@@ -268,18 +303,35 @@ export async function runSiteRecon(site: SiteRow): Promise<SiteReconResult> {
     `INSERT INTO crawl_pages (id, crawl_id, url, status_code, page_type, title, meta_description, raw_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const upsertPage = db.prepare(
-    `INSERT INTO pages (id, site_id, url, page_type, title, meta_description, h1, canonical_url, indexable, price, price_currency)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `INSERT INTO pages (id, site_id, url, page_type, title, meta_description, h1, canonical_url, indexable, price, price_currency, images_total, images_missing_alt, viewport_content, has_lorem_ipsum)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(site_id, url) DO UPDATE SET
        page_type = excluded.page_type, title = excluded.title, meta_description = excluded.meta_description,
        h1 = excluded.h1, canonical_url = excluded.canonical_url, price = excluded.price, price_currency = excluded.price_currency,
+       images_total = excluded.images_total, images_missing_alt = excluded.images_missing_alt,
+       viewport_content = excluded.viewport_content, has_lorem_ipsum = excluded.has_lorem_ipsum,
        updated_at = datetime('now')`
   );
 
   for (const p of pages) {
     insertCrawlPage.run(newId(), crawlId, p.url, p.statusCode, p.pageType, p.title, p.metaDescription, JSON.stringify(p));
     if (p.statusCode && p.statusCode < 400) {
-      upsertPage.run(newId(), site.id, p.url, p.pageType, p.title, p.metaDescription, p.h1, p.canonical, p.price, p.priceCurrency);
+      upsertPage.run(
+        newId(),
+        site.id,
+        p.url,
+        p.pageType,
+        p.title,
+        p.metaDescription,
+        p.h1,
+        p.canonical,
+        p.price,
+        p.priceCurrency,
+        p.imagesTotal,
+        p.imagesMissingAlt,
+        p.viewportContent,
+        p.hasLoremIpsum ? 1 : 0
+      );
     }
   }
 

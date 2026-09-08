@@ -24,6 +24,10 @@ export interface PageRow {
   canonical_url: string | null;
   price: number | null;
   price_currency: string | null;
+  images_total: number | null;
+  images_missing_alt: number | null;
+  viewport_content: string | null;
+  has_lorem_ipsum: number | null;
 }
 
 export function getLatestCrawl(siteId: string): CrawlRow | null {
