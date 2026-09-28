@@ -30,6 +30,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     primaryLocation:
       typeof body.primaryLocation === "string" ? body.primaryLocation.trim() : body.primaryLocation === null ? null : undefined,
     notes: typeof body.notes === "string" ? body.notes.trim() : body.notes === null ? null : undefined,
+    repoLocalPath:
+      typeof body.repoLocalPath === "string" ? body.repoLocalPath.trim() : body.repoLocalPath === null ? null : undefined,
   });
   return NextResponse.json({ client });
 }

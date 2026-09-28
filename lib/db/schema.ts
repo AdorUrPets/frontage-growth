@@ -44,10 +44,12 @@ CREATE TABLE IF NOT EXISTS sites (
   search_console_connected INTEGER NOT NULL DEFAULT 0,
   analytics_connected INTEGER NOT NULL DEFAULT 0,
   search_console_property TEXT,
+  analytics_property_id TEXT,
   google_connection_id TEXT REFERENCES google_connections(id) ON DELETE SET NULL,
   google_refresh_token_ciphertext TEXT,
   google_refresh_token_iv TEXT,
   google_refresh_token_tag TEXT,
+  repo_local_path TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -61,6 +61,7 @@ export function updateClient(
     primaryLocation?: string | null;
     notes?: string | null;
     websiteUrl?: string;
+    repoLocalPath?: string | null;
   }
 ): ClientWithSite | null {
   const db = getDb();
@@ -79,6 +80,13 @@ export function updateClient(
 
   if (input.websiteUrl && current.site) {
     db.prepare(`UPDATE sites SET url = ?, updated_at = datetime('now') WHERE id = ?`).run(input.websiteUrl, current.site.id);
+  }
+
+  if (input.repoLocalPath !== undefined && current.site) {
+    db.prepare(`UPDATE sites SET repo_local_path = ?, updated_at = datetime('now') WHERE id = ?`).run(
+      input.repoLocalPath,
+      current.site.id
+    );
   }
 
   return getClient(id);

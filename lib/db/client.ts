@@ -31,6 +31,8 @@ const COLUMN_MIGRATIONS = [
   "ALTER TABLE pages ADD COLUMN images_missing_alt INTEGER",
   "ALTER TABLE pages ADD COLUMN viewport_content TEXT",
   "ALTER TABLE pages ADD COLUMN has_lorem_ipsum INTEGER",
+  "ALTER TABLE sites ADD COLUMN analytics_property_id TEXT",
+  "ALTER TABLE sites ADD COLUMN repo_local_path TEXT",
 ];
 
 // Retired features (Shopify integration, the Growth Agent live-site pull

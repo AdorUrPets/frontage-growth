@@ -102,6 +102,48 @@ export function getSiteGoogleStatus(siteId: string): SiteGoogleStatus {
   };
 }
 
+// --- per-site: Analytics (GA4) connection, same shared google_connection_id as Search Console ---
+
+// Only ever call this after a real successful verifyAnalyticsProperty() round-trip against
+// Google's own API - never set analytics_connected on the strength of a list response alone,
+// since the caller may be re-selecting a stale/typed-in id.
+export function setAnalyticsProperty(siteId: string, propertyId: string): void {
+  getDb()
+    .prepare(`UPDATE sites SET analytics_property_id = ?, analytics_connected = 1, updated_at = datetime('now') WHERE id = ?`)
+    .run(propertyId, siteId);
+}
+
+export function disconnectSiteAnalytics(siteId: string): void {
+  getDb()
+    .prepare(`UPDATE sites SET analytics_property_id = NULL, analytics_connected = 0, updated_at = datetime('now') WHERE id = ?`)
+    .run(siteId);
+}
+
+export interface SiteAnalyticsStatus {
+  connected: boolean;
+  connectionId: string | null;
+  connectionEmail: string | null;
+  propertyId: string | null;
+}
+
+export function getSiteAnalyticsStatus(siteId: string): SiteAnalyticsStatus {
+  const row = getDb()
+    .prepare(
+      `SELECT s.analytics_connected, s.analytics_property_id, s.google_connection_id, gc.google_email
+       FROM sites s LEFT JOIN google_connections gc ON gc.id = s.google_connection_id
+       WHERE s.id = ?`
+    )
+    .get(siteId) as
+    | { analytics_connected: number; analytics_property_id: string | null; google_connection_id: string | null; google_email: string | null }
+    | undefined;
+  return {
+    connected: row?.analytics_connected === 1,
+    connectionId: row?.google_connection_id ?? null,
+    connectionEmail: row?.google_email ?? null,
+    propertyId: row?.analytics_property_id ?? null,
+  };
+}
+
 // Resolves a fresh access token for whichever Google connection a site is
 // assigned to. Returns null if the site has no connection assigned yet.
 export async function getFreshAccessTokenForSite(siteId: string): Promise<string | null> {

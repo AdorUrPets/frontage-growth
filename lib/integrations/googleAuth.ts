@@ -1,8 +1,11 @@
 // Google OAuth2 (Authorization Code flow, offline access for a refresh
-// token) — Search Console today, Analytics Data API can reuse this exact
-// module later (just add its scope to SCOPES).
+// token) — Search Console and Analytics (GA4) both reuse this exact module.
 
-const SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly", "https://www.googleapis.com/auth/userinfo.email"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/webmasters.readonly",
+  "https://www.googleapis.com/auth/analytics.readonly",
+  "https://www.googleapis.com/auth/userinfo.email",
+];
 
 function getEnv() {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;

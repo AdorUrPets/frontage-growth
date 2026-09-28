@@ -89,6 +89,10 @@ export interface SiteRow {
   hosting: string | null;
   search_console_connected: number;
   analytics_connected: number;
+  search_console_property: string | null;
+  analytics_property_id: string | null;
+  google_connection_id: string | null;
+  repo_local_path: string | null;
   created_at: string;
   updated_at: string;
 }

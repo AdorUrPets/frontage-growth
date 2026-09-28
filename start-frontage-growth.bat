@@ -1,6 +1,6 @@
 @echo off
 title Frontage Growth - Mission Control
-cd /d "C:\Users\GGPC\dev\frontage-growth"
+cd /d "E:\Frontage Growth"
 
 netstat -ano | findstr ":3920" | findstr "LISTENING" >nul
 if %errorlevel%==0 (
